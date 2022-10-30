@@ -2,10 +2,14 @@ extends Reference
 class_name DomoticzClient
 
 
-signal connected
 signal polling_error(error)
 signal new_status(status)
-signal body_received(message)
+signal body_received(bodyType, message)
+signal unexpected_body_received(message)
+signal devices_list_retrieved(devices)
+
+
+const _url = "/json.htm"
 
 
 var host = "127.0.0.1"
@@ -16,15 +20,25 @@ var username_encoded = ""
 var password_encoded = ""
 
 
-var _last_body_received := ""
+enum BodyType {
+	eNone = 0,
+	eBodyDevices,
+	eNbBodyType
+}
 
 
 var _client : HTTPClient = null
-var _url = "/json.htm"
+var _last_body_received := ""
+var _last_status = HTTPClient.STATUS_DISCONNECTED
+var _last_devices_retrieved : Array = []
+
+var _waitingForBodyType = BodyType.eNone
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	connect("body_received", self, "_on_body_received")
+	connect("new_status", self, "_on_new_status")
 	var err = connect_to_domoticz()
 	if err != OK:
 		push_warning("Problem with the configuration of DomoticzClient." +
@@ -43,8 +57,10 @@ func request_devices_list():
 	if not _client:
 		return
 	
-	request_post({"type" : "devices"})
-	pass
+	var err = request_post({"type" : "devices"})
+	if err == OK:
+		_waitingForBodyType = BodyType.eBodyDevices
+	return err
 
 
 func connect_to_domoticz(force := false):
@@ -68,38 +84,60 @@ func close_connection():
 		_last_status = HTTPClient.STATUS_DISCONNECTED
 
 
-func request_post(body) -> String:
+func request_post(body) -> int:
+	if _waitingForBodyType != BodyType.eNone:
+		return ERR_ALREADY_IN_USE
 	var body_str = _client.query_string_from_dict(body)
 	var query_string = _client.query_string_from_dict({"username" : username_encoded, "password" : password_encoded})
 	var headers =  ["Content-Type: application/x-www-form-urlencoded", "Content-Length: " + str(body_str.length())]
-	_client.request(HTTPClient.METHOD_POST, _url + "?" + query_string, headers, body_str)
-	return ""
+	var err = _client.request(HTTPClient.METHOD_POST, _url + "?" + query_string, headers, body_str)
+	return err
 
 
-var _last_status = HTTPClient.STATUS_DISCONNECTED
-func polling():
+func polling() -> int:
 	if not _client:
-		return
+		return ERR_CONNECTION_ERROR
 	
+	# polling
 	var err = _client.poll()
 	if err != OK:
 		emit_signal("polling_error", err)
 		close_connection()
-		return
-
+		return err
+	
 	# check if status has changed
 	var status = _client.get_status()
-	if status == _last_status:
-		return
-	_last_status = status
+	if status != _last_status:
+		_last_status = status
+		_new_status(_last_status)
+	
+	return OK
 
-	if _last_status == HTTPClient.STATUS_CONNECTED:
-		emit_signal("connected")
-	elif _last_status == HTTPClient.STATUS_BODY:
+
+func _new_status(status):
+	emit_signal("new_status", status)
+	if status == HTTPClient.STATUS_BODY:
 		var body = _client.read_response_body_chunk()
 		while _client.has_response() and _client.get_status() == HTTPClient.STATUS_BODY:
 			body.append_array(_client.read_response_body_chunk())
 		_last_body_received = body.get_string_from_utf8()
-		emit_signal("body_received", _last_body_received)
-	
-	emit_signal("new_status", _last_status)
+		
+		if _waitingForBodyType == BodyType.eNone:
+			emit_signal("unexpected_body_received", _last_body_received)
+		else:
+			_body_received(_waitingForBodyType, _last_body_received)
+		_waitingForBodyType = BodyType.eNone
+
+
+func _body_received(bodyType, body):
+	emit_signal("body_received", bodyType, body)
+	if bodyType == BodyType.eBodyDevices:
+		var _bodyJSON = JSON.parse(body)
+		assert(_bodyJSON.result is Dictionary and _bodyJSON.result.has("result"))
+		var _devicesJSON = _bodyJSON.result["result"]
+		_last_devices_retrieved.clear()
+		for _deviceJSON in _devicesJSON:
+			_last_devices_retrieved.push_back(Device.new(_deviceJSON))
+		emit_signal("devices_list_retrieved", _last_devices_retrieved)
+	else:
+		pass # @TODO

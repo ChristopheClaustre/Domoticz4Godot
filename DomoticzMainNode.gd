@@ -3,7 +3,7 @@ class_name DomoticzMainNode
 
 
 signal connected
-signal body_received(message)
+signal devices_list_retrieved(devices)
 
 
 export var host = "127.0.0.1"
@@ -15,13 +15,13 @@ export var password_encoded = ""
 
 
 onready var _client := DomoticzClient.new()
-var _url = "/json.htm"
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	_client.connect("polling_error", self, "_on_client_polling_error")
 	_client.connect("new_status", self, "_on_client_new_status")
+	_client.connect("devices_list_retrieved", self, "_on_client_devices_list_retrieved")
 	
 	_client.host = host
 	_client.port = port
@@ -61,6 +61,7 @@ func _on_client_new_status(status):
 		print_log("Can't connect to server. Check the settings of your client and your server.", true)
 	elif status == HTTPClient.STATUS_CONNECTED:
 		print_log("Connected!")
+		emit_signal("connected")
 	elif status == HTTPClient.STATUS_REQUESTING:
 		print_log("Requesting...")
 	elif status == HTTPClient.STATUS_BODY:
@@ -73,6 +74,8 @@ func _on_client_new_status(status):
 		print_log("Unknown status", true)
 
 
+func _on_client_devices_list_retrieved(devices):
+	emit_signal("devices_list_retrieved", devices)
 
 
 func print_log(message : String, warning := false):
