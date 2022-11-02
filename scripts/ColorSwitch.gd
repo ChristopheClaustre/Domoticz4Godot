@@ -11,8 +11,8 @@ func get_class():
 var color : DzColor
 
 
-func _internal_init(device_info, dzClient):
-	._internal_init(device_info, dzClient)
+func _internal_init(device_info, dz_main_node):
+	._internal_init(device_info, dz_main_node)
 	if device_info.has("Color") and not device_info["Color"].empty():
 		color = DzColor.new(parse_json(device_info["Color"]))
 	else:
@@ -21,15 +21,15 @@ func _internal_init(device_info, dzClient):
 
 
 func switch_on():
-	dzClient.request_switchlight(idx, "On")
+	dzMainNode.request_switchlight(idx, "On")
 
 
 func switch_off():
-	dzClient.request_switchlight(idx, "Off")
+	dzMainNode.request_switchlight(idx, "Off")
 
 
 func switch_toggle():
-	dzClient.request_switchlight(idx, "Toggle")
+	dzMainNode.request_switchlight(idx, "Toggle")
 
 
 func _to_string():
