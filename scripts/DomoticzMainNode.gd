@@ -22,14 +22,14 @@ func _ready():
 	_client.connect("polling_error", self, "_on_client_polling_error")
 	_client.connect("new_status", self, "_on_client_new_status")
 	_client.connect("devices_list_retrieved", self, "_on_client_devices_list_retrieved")
-	
+
 	_client.host = host
 	_client.port = port
 	_client.use_ssl = use_ssl
 	_client.verify_host = verify_host
 	_client.username_encoded = username_encoded
 	_client.password_encoded = password_encoded
-	
+
 	var err = _client.connect_to_domoticz()
 	if err != OK:
 		push_warning("Problem with the configuration of DomoticzClient." +

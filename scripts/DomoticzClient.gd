@@ -56,7 +56,7 @@ func _process(_delta):
 func request_devices_list():
 	if not _client:
 		return
-	
+
 	var err = request_post({"type" : "devices"})
 	if err == OK:
 		_waitingForBodyType = BodyType.eBodyDevices
@@ -68,12 +68,12 @@ func connect_to_domoticz(force := false):
 		if not force:
 			return OK
 		close_connection()
-	
+
 	_client = HTTPClient.new()
 	var err = _client.connect_to_host(host, port, use_ssl, verify_host)
 	if err != OK:
 		close_connection()
-	
+
 	return err
 
 
@@ -97,20 +97,20 @@ func request_post(body) -> int:
 func polling() -> int:
 	if not _client:
 		return ERR_CONNECTION_ERROR
-	
+
 	# polling
 	var err = _client.poll()
 	if err != OK:
 		emit_signal("polling_error", err)
 		close_connection()
 		return err
-	
+
 	# check if status has changed
 	var status = _client.get_status()
 	if status != _last_status:
 		_last_status = status
 		_new_status(_last_status)
-	
+
 	return OK
 
 
@@ -121,7 +121,7 @@ func _new_status(status):
 		while _client.has_response() and _client.get_status() == HTTPClient.STATUS_BODY:
 			body.append_array(_client.read_response_body_chunk())
 		_last_body_received = body.get_string_from_utf8()
-		
+
 		if _waitingForBodyType == BodyType.eNone:
 			emit_signal("unexpected_body_received", _last_body_received)
 		else:
@@ -137,7 +137,7 @@ func _body_received(bodyType, body):
 		var _devicesJSON = _bodyJSON.result["result"]
 		_last_devices_retrieved.clear()
 		for _deviceJSON in _devicesJSON:
-			_last_devices_retrieved.push_back(Device.new(_deviceJSON))
+			_last_devices_retrieved.push_back(DeviceFactory.createDevice(_deviceJSON))
 		emit_signal("devices_list_retrieved", _last_devices_retrieved)
 	else:
 		pass # @TODO
