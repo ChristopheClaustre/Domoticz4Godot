@@ -11,13 +11,18 @@ func get_class():
 var name : String = ""
 var idx : int = -1
 var type : String = ""
+var dzClient : Resource = null
 
 
-func _internal_init(device_info):
+func _internal_init(device_info, dz_client):
 	name = device_info["Name"]
 	idx = str2var(device_info["idx"])
 	type = device_info["Type"]
-	pass
+	dzClient = dz_client
+
+
+func switch_stop():
+	dzClient.request_switchlight(idx, "Stop")
 
 
 func _to_string():

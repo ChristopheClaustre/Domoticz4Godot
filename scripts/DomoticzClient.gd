@@ -1,4 +1,4 @@
-extends Reference
+extends Resource
 class_name DomoticzClient
 
 
@@ -7,6 +7,7 @@ signal new_status(status)
 signal body_received(bodyType, message)
 signal unexpected_body_received(message)
 signal devices_list_retrieved(devices)
+signal switchlight_error(body)
 
 
 const _url = "/json.htm"
@@ -23,6 +24,7 @@ var password_encoded = ""
 enum BodyType {
 	eNone = 0,
 	eBodyDevices,
+	eBodySwitchLight,
 	eNbBodyType
 }
 
@@ -54,12 +56,24 @@ func _process(_delta):
 
 # connect to the signal devices_list_retrieved to have the answer of your request
 func request_devices_list():
-	if not _client:
-		return
-
 	var err = request_post({"type" : "devices"})
 	if err == OK:
 		_waitingForBodyType = BodyType.eBodyDevices
+	return err
+
+
+func request_switchlight(idx : int, switch_cmd : String, other_params = {}):
+	var body = {
+		"type" : "command",
+		"param" : "switchlight",
+		"idx" : str(idx),
+		"switchcmd" : switch_cmd
+	}
+	body.merge(other_params)
+	
+	var err = request_post(body)
+	if err == OK:
+		_waitingForBodyType = BodyType.eBodySwitchLight
 	return err
 
 
@@ -85,6 +99,11 @@ func close_connection():
 
 
 func request_post(body) -> int:
+	if not _client:
+		var err = connect_to_domoticz(true)
+		if err != OK:
+			return err
+	
 	if _waitingForBodyType != BodyType.eNone:
 		return ERR_ALREADY_IN_USE
 	var body_str = _client.query_string_from_dict(body)
@@ -131,13 +150,17 @@ func _new_status(status):
 
 func _body_received(bodyType, body):
 	emit_signal("body_received", bodyType, body)
+	var _bodyJSON = JSON.parse(body)
+	assert(_bodyJSON.result is Dictionary)
 	if bodyType == BodyType.eBodyDevices:
-		var _bodyJSON = JSON.parse(body)
-		assert(_bodyJSON.result is Dictionary and _bodyJSON.result.has("result"))
+		assert(_bodyJSON.result.has("result"))
 		var _devicesJSON = _bodyJSON.result["result"]
 		_last_devices_retrieved.clear()
 		for _deviceJSON in _devicesJSON:
-			_last_devices_retrieved.push_back(DeviceFactory.createDevice(_deviceJSON))
+			_last_devices_retrieved.push_back(DeviceFactory.createDevice(_deviceJSON, self))
 		emit_signal("devices_list_retrieved", _last_devices_retrieved)
+	elif bodyType == BodyType.eBodySwitchLight:
+		if _bodyJSON.result.has("status") and _bodyJSON.result["status"] == "OK":
+			emit_signal("switchlight_error", body)
 	else:
 		pass # @TODO
