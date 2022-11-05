@@ -6,7 +6,8 @@ signal configuration_error(err)
 signal connection_error(status)
 signal request_error(err)
 signal requesting_error(status)
-# signal 4 answer
+# signal 4 answers
+signal switchlight_error(body)
 signal devices_list_retrieved(devices)
 
 
