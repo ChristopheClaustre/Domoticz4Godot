@@ -54,7 +54,9 @@ func _request_devices_list_coroutine():
 		var _devicesJSON = _bodyJSON.result["result"]
 		var _devices_retrieved := []
 		for _deviceJSON in _devicesJSON:
-			_devices_retrieved.push_back(DeviceFactory.createDevice(_deviceJSON, self))
+			var _device = DeviceFactory.createDevice(_deviceJSON, self)
+			if _device != null:
+				_devices_retrieved.push_back(_device)
 		emit_signal("devices_list_retrieved", _devices_retrieved)
 
 
