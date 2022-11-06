@@ -3,7 +3,8 @@ class_name DeviceFactory
 
 
 const cDeviceTypes = {
-	"Color Switch": preload("res://addons/Domoticz4Godot/scripts/ColorSwitch.gd")
+	"Color Switch": preload("res://addons/Domoticz4Godot/scripts/ColorSwitch.gd"),
+	"Light/Switch": preload("res://addons/Domoticz4Godot/scripts/Switch.gd")
 }
 const cDefaultDeviceType = preload("res://addons/Domoticz4Godot/scripts/Device.gd")
 
