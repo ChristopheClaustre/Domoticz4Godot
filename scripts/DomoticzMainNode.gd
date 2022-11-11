@@ -2,6 +2,7 @@ extends Node
 class_name DomoticzMainNode
 
 # signal 4 errors
+signal timeout_error(status)
 signal configuration_error(err)
 signal connection_error(status)
 signal request_error(err)
@@ -118,13 +119,18 @@ func close_connection():
 
 func _check_status_coroutine(wanted_status : int, allowed_status : Array, error_signal : String):
 	var _checked = false
+	var _started := Time.get_ticks_msec()
 	while not _checked:
 		_client.polling()
-		if _client._last_status == wanted_status:
-			_checked = true
-		elif allowed_status.find(_client._last_status) != -1:
-			yield(get_tree(), "idle_frame") # wait one frame
+		if Time.get_ticks_msec() - _started < 10000:
+			if _client._last_status == wanted_status:
+				_checked = true
+			elif allowed_status.find(_client._last_status) != -1:
+				yield(get_tree(), "idle_frame") # wait one frame
+			else:
+				emit_signal("connection_error", _client._last_status)
+				break
 		else:
-			emit_signal("connection_error", _client._last_status)
+			emit_signal("timeout_error", _client._last_status)
 			break
 	return _checked
