@@ -12,12 +12,12 @@ signal switchlight_error(body)
 signal devices_list_retrieved(devices)
 
 
-export var host = "127.0.0.1"
-export(int, -1, 65535) var port = -1
-export var use_ssl = false
-export var verify_host = true
-export var username_encoded = ""
-export var password_encoded = ""
+export var host = "127.0.0.1" setget _set_host
+export(int, -1, 65535) var port = -1 setget _set_port
+export var use_ssl = false setget _set_use_ssl
+export var verify_host = true setget _set_verify_host
+export var username_encoded = "" setget _set_username_encoded
+export var password_encoded = "" setget _set_password_encoded
 
 
 onready var _client := DomoticzClient.new()
@@ -32,9 +32,26 @@ func _ready():
 	_client.username_encoded = username_encoded
 	_client.password_encoded = password_encoded
 
-	var err = _client.connect_to_domoticz()
-	if err != OK:
-		emit_signal("configuration_error", err)
+
+# setter on DomoticzClient attributes
+func _set_host(value):
+	host = value
+	_client.host = host
+func _set_port(value):
+	port = value
+	_client.port = port
+func _set_use_ssl(value):
+	use_ssl = value
+	_client.use_ssl = use_ssl
+func _set_verify_host(value):
+	verify_host = value
+	_client.verify_host = verify_host
+func _set_username_encoded(value):
+	username_encoded = value
+	_client.username_encoded = username_encoded
+func _set_password_encoded(value):
+	password_encoded = value
+	_client.password_encoded = password_encoded
 
 
 # connect to the signal devices_list_retrieved to have the answer of your request
