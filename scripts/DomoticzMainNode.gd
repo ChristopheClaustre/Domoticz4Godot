@@ -55,16 +55,19 @@ func _set_password_encoded(value):
 
 
 # connect to the signal devices_list_retrieved to have the answer of your request
-func request_devices_list():
-	_request_in_progress = _request_devices_list_coroutine()
+func request_devices_list(plan = -1):
+	_request_in_progress = _request_devices_list_coroutine(plan)
 
 
 func request_switchlight(idx : int, switch_cmd : String, other_params = {}):
 	_request_in_progress = _request_switchlight_coroutine(idx, switch_cmd, other_params)
 
 
-func _request_devices_list_coroutine():
-	yield(_request_post_coroutine({"type" : "devices"}), "completed")
+func _request_devices_list_coroutine(plan = -1):
+	var _request_body := {"type" : "devices"}
+	if plan != -1:
+		_request_body.merge({"plan" : plan })
+	yield(_request_post_coroutine(_request_body), "completed")
 
 	if not _client._last_body_received.empty():
 		var _bodyJSON = JSON.parse(_client._last_body_received)
