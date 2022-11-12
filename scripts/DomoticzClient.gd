@@ -78,9 +78,6 @@ func polling() -> int:
 
 	# polling
 	var err = _client.poll()
-	if err != OK:
-		close_connection()
-		return err
 
 	# check if status has changed
 	var status = _client.get_status()
@@ -93,4 +90,6 @@ func polling() -> int:
 			body.append_array(_client.read_response_body_chunk())
 		_last_body_received = body.get_string_from_utf8()
 
-	return OK
+	if err != OK:
+		close_connection()
+	return err
