@@ -98,6 +98,7 @@ func _request_switchlight_coroutine(idx : int, switch_cmd : String, other_params
 
 var _request_in_progress = null
 func _request_post_coroutine(body):
+	yield(get_tree(), "idle_frame") # wait one frame just to always return a coroutine object
 	# ask for connection
 	var err = _client.connect_to_domoticz(true)
 	if err != OK:
