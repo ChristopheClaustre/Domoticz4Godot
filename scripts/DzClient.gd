@@ -1,5 +1,5 @@
 extends Resource
-class_name DomoticzClient
+class_name DzClient
 
 
 const _url = "/json.htm"
@@ -23,7 +23,7 @@ var _last_devices_retrieved : Array = []
 func _ready():
 	var err = connect_to_domoticz()
 	if err != OK:
-		push_warning("Problem with the configuration of DomoticzClient." +
+		push_warning("Problem with the configuration of DzClient." +
 			"Please modify parameter of your client and retry connection by calling connect_to_domoticz(true).")
 
 

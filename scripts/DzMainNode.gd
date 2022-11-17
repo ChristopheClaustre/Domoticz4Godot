@@ -1,5 +1,5 @@
 extends Node
-class_name DomoticzMainNode
+class_name DzMainNode
 
 # signal 4 errors
 signal timeout_error(status)
@@ -20,7 +20,7 @@ export var username_encoded = "" setget _set_username_encoded
 export var password_encoded = "" setget _set_password_encoded
 
 
-onready var _client := DomoticzClient.new()
+onready var _client := DzClient.new()
 
 
 # Called when the node enters the scene tree for the first time.
@@ -33,7 +33,7 @@ func _ready():
 	_client.password_encoded = password_encoded
 
 
-# setter on DomoticzClient attributes
+# setter on DzClient attributes
 func _set_host(value):
 	host = value
 	_client.host = host
