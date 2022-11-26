@@ -5,12 +5,7 @@ class_name DzClient
 const _url = "/json.htm"
 
 
-var host = "127.0.0.1"
-var port = -1
-var use_ssl = false
-var verify_host = true
-var username_encoded = ""
-var password_encoded = ""
+var server_settings := DzServerSettings.new()
 
 
 var _client : HTTPClient = null
@@ -44,7 +39,7 @@ func connect_to_domoticz(force := false):
 	_last_body_received = ""
 
 	_client = HTTPClient.new()
-	var err = _client.connect_to_host(host, port, use_ssl, verify_host)
+	var err = _client.connect_to_host(server_settings.host, server_settings.port, server_settings.use_ssl, server_settings.verify_host)
 	if err != OK:
 		close_connection()
 
@@ -66,7 +61,7 @@ func request_post(body) -> int:
 		return ERR_CONNECTION_ERROR
 
 	var body_str = _client.query_string_from_dict(body)
-	var query_string = _client.query_string_from_dict({"username" : username_encoded, "password" : password_encoded})
+	var query_string = _client.query_string_from_dict({"username" : server_settings.username_encoded, "password" : server_settings.password_encoded})
 	var headers =  ["Content-Type: application/x-www-form-urlencoded", "Content-Length: " + str(body_str.length())]
 	var err = _client.request(HTTPClient.METHOD_POST, _url + "?" + query_string, headers, body_str)
 	return err
